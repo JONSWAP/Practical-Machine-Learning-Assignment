@@ -1,0 +1,154 @@
+---
+title: "Prediction Assignment"
+author: "CONG"
+date: "1/17/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Introduction
+
+Using devices such as Jawbone Up, Nike FuelBand, and Fitbit it is now possible to collect a large amount of data about personal activity relatively inexpensively. These type of devices are part of the quantified self movement – a group of enthusiasts who take measurements about themselves regularly to improve their health, to find patterns in their behavior, or because they are tech geeks. One thing that people regularly do is quantify how much of a particular activity they do, but they rarely quantify how well they do it. In this project, your goal will be to use data from accelerometers on the belt, forearm, arm, and dumbell of 6 participants. They were asked to perform barbell lifts correctly and incorrectly in 5 different ways. 
+
+More information is available from the website here: http://web.archive.org/web/20161224072740/http:/groupware.les.inf.puc-rio.br/har (see the section on the Weight Lifting Exercise Dataset).
+
+## Data
+
+The training data for this project are available here:
+
+https://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv
+
+The test data are available here:
+
+https://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv
+
+The data for this project come from this source: http://web.archive.org/web/20161224072740/http:/groupware.les.inf.puc-rio.br/har. If you use the document you create for this class for any purpose please cite them as they have been very generous in allowing their data to be used for this kind of assignment.
+
+## Data Preview
+
+Download data and preview.
+
+```{r, echo=TRUE}
+#set seed
+set.seed(12321)
+#download data
+trainurl<-'https://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv'
+testurl<-'https://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv'
+
+
+#read data
+train<-read.csv(url(trainurl))
+test<-read.csv(url(testurl))
+
+
+dim(train)
+dim(test)
+```
+## Data Setting
+
+Separate training data in 75% 25% section.
+
+```{r, echo=TRUE}
+
+#create partition
+library(caret)
+intrain<-createDataPartition(train$classe, p=0.75, list=FALSE)
+trainset<-train[intrain,]
+testset<-train[-intrain,]
+dim(trainset)
+dim(testset)
+
+
+```
+Data cleaning, remove 0 values.
+
+```{r, echo=TRUE}
+
+#Remove 0 values
+
+trainset<-trainset[,colSums(is.na(trainset))==0]
+testset<-testset[,colSums(is.na(testset))==0]
+
+
+```
+
+Data cleaning, remove near zero values.
+
+```{r, echo=TRUE}
+
+#Remove 0 values
+
+NZV <- nearZeroVar(trainset)
+trainset <- trainset[, -NZV]
+testset  <- testset[, -NZV]
+
+```
+
+
+Remove NA data
+
+```{r, echo=TRUE}
+
+# remove NA
+
+
+NAdata    <- sapply(trainset, function(x) mean(is.na(x))) > 0.9
+trainset <- trainset[, NAdata==FALSE]
+testset  <- testset[, NAdata==FALSE]
+
+```
+
+Data cleaning, remove info data.
+
+```{r, echo=TRUE}
+
+#Remove info data
+
+trainset<-trainset[,-(1:7)]
+testset<-testset[,-(1:7)]
+dim(trainset)
+dim(testset)
+
+```
+
+## Data Prediction
+
+Decision tree
+
+```{r, echo=TRUE}
+
+
+library(randomForest)
+
+trainfit<-train(classe~.,data=trainset,method="rf")
+trainfit$finalModel
+```
+
+Prediction of data from testset in training data.
+
+```{r, echo=TRUE}
+
+predictdata<-predict(trainfit,newdata=testset)
+configdata<-confusionMatrix(predictdata,testset$classe)
+configdata
+
+```
+
+
+## Conclusion
+
+Use the generated algorithm to predict the test data.
+
+```{r, echo=TRUE}
+
+predicttestset<-predict(tranfit,newdata=test)
+predicttestset
+
+```
+
+
+
+
